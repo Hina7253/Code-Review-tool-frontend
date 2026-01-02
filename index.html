@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Code Review Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .status-online {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .status-offline {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .code-section, .results-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            height: 400px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .clear-btn {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .clear-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .results-container {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+
+        .issue-category {
+            margin-bottom: 25px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .critical { background: #fee; color: #c33; }
+        .warning { background: #ffeaa7; color: #d63031; }
+        .info { background: #dfe6e9; color: #2d3436; }
+        .success { background: #d4edda; color: #155724; }
+
+        .issue-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .issue-line {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .issue-description {
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+
+        .issue-suggestion {
+            color: #777;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #c33;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 968px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>☕ Java Code Review Tool</h1>
+            <p>Automated code analysis for better Java code quality</p>
+            <div class="status-indicator" id="backendStatus">🔄 Checking backend...</div>
+        </div>
+
+        <div class="content">
+            <div class="code-section">
+                <div class="section-title">📝 Enter Java Code</div>
+                <textarea id="codeInput" placeholder="Paste your Java code here...
+
+Example:
+public class Example {
+    public void method() {
+        String s = null;
+        System.out.println(s.length());
+    }
+}"></textarea>
+                <div class="button-group">
+                    <button class="analyze-btn" id="analyzeBtn" onclick="analyzeCode()">🔍 Analyze Code</button>
+                    <button class="clear-btn" onclick="clearAll()">🗑️ Clear</button>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <div class="section-title">📊 Analysis Results</div>
+                <div class="results-container" id="results">
+                    <div style="text-align: center; color: #999; padding: 40px;">
+                        <p style="font-size: 3em;">🔍</p>
+                        <p>Enter your Java code and click "Analyze Code" to start</p>
+                    </div>
+                </div>
+                <div class="stats" id="stats" style="display: none;">
+                    <div class="stat-box">
+                        <div class="stat-number" id="criticalCount">0</div>
+                        <div class="stat-label">Critical</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="warningCount">0</div>
+                        <div class="stat-label">Warnings</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="infoCount">0</div>
+                        <div class="stat-label">Info</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalCount">0</div>
+                        <div class="stat-label">Total Issues</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:8080/api';
+        let backendOnline = false;
+
+        // Check backend status on page load
+        async function checkBackendStatus() {
+            const statusDiv = document.getElementById('backendStatus');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    backendOnline = true;
+                    statusDiv.textContent = '✅ Backend Online';
+                    statusDiv.className = 'status-indicator status-online';
+                    analyzeBtn.disabled = false;
+                } else {
+                    throw new Error('Backend not responding');
+                }
+            } catch (error) {
+                backendOnline = false;
+                statusDiv.textContent = '❌ Backend Offline';
+                statusDiv.className = 'status-indicator status-offline';
+                analyzeBtn.disabled = true;
+                console.error('Backend connection failed:', error);
+            }
+        }
+
+        // Call on page load
+        checkBackendStatus();
+
+        async function analyzeCode() {
+            const code = document.getElementById('codeInput').value.trim();
+            const resultsDiv = document.getElementById('results');
+            const statsDiv = document.getElementById('stats');
+
+            if (!code) {
+                resultsDiv.innerHTML = '<div style="text-align: center; color: #e74c3c; padding: 40px;"><p style="font-size: 2em;">⚠️</p><p>Please enter some Java code first!</p></div>';
+                return;
+            }
+
+            if (!backendOnline) {
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <strong>⚠️ Backend is offline!</strong><br>
+                        Please make sure your Spring Boot backend is running on port 8080.<br><br>
+                        Steps:<br>
+                        1. Open IntelliJ IDEA<br>
+                        2. Run CodeReviewApplication.java<br>
+                        3. Wait for "Started CodeReviewApplication"<br>
+                        4. Refresh this page
+                    </div>
+                `;
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analyzing your code with backend...</p></div>';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Backend error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                displayResults(data);
+                statsDiv.style.display = 'grid';
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <strong>❌ Analysis Failed!</strong><br>
+                        ${error.message}<br><br>
+                        Make sure backend is running and try again.
+                    </div>
+                `;
+                console.error('Analysis error:', error);
+            }
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            let html = '';
+
+            const criticalCount = data.critical?.length || 0;
+            const warningCount = data.warning?.length || 0;
+            const infoCount = data.info?.length || 0;
+            const totalCount = data.totalIssues || 0;
+
+            // Update stats
+            document.getElementById('criticalCount').textContent = criticalCount;
+            document.getElementById('warningCount').textContent = warningCount;
+            document.getElementById('infoCount').textContent = infoCount;
+            document.getElementById('totalCount').textContent = totalCount;
+
+            if (criticalCount > 0) {
+                html += '<div class="issue-category"><div class="category-header critical">🔴 Critical Issues</div>';
+                data.critical.forEach(issue => {
+                    html += `<div class="issue-item">
+                        <div class="issue-line">Line ${issue.lineNumber || 'N/A'}</div>
+                        <div class="issue-description">${issue.description}</div>
+                        <div class="issue-suggestion">💡 ${issue.suggestion}</div>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+
+            if (warningCount > 0) {
+                html += '<div class="issue-category"><div class="category-header warning">⚠️ Warnings</div>';
+                data.warning.forEach(issue => {
+                    html += `<div class="issue-item">
+                        <div class="issue-line">Line ${issue.lineNumber || 'N/A'}</div>
+                        <div class="issue-description">${issue.description}</div>
+                        <div class="issue-suggestion">💡 ${issue.suggestion}</div>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+
+            if (infoCount > 0) {
+                html += '<div class="issue-category"><div class="category-header info">ℹ️ Suggestions</div>';
+                data.info.forEach(issue => {
+                    html += `<div class="issue-item">
+                        <div class="issue-line">Line ${issue.lineNumber || 'N/A'}</div>
+                        <div class="issue-description">${issue.description}</div>
+                        <div class="issue-suggestion">💡 ${issue.suggestion}</div>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+
+            if (html === '') {
+                html = '<div style="text-align: center; color: #2ecc71; padding: 40px;"><p style="font-size: 3em;">✅</p><p><strong>No issues found!</strong><br>Your code looks clean.</p></div>';
+            }
+
+            resultsDiv.innerHTML = html;
+        }
+
+        function clearAll() {
+            document.getElementById('codeInput').value = '';
+            document.getElementById('results').innerHTML = '<div style="text-align: center; color: #999; padding: 40px;"><p style="font-size: 3em;">🔍</p><p>Enter your Java code and click "Analyze Code" to start</p></div>';
+            document.getElementById('stats').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
