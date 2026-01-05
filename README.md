@@ -7,7 +7,7 @@ This project is mainly designed for **students and beginners** to improve Java c
 
 ## 🔗 Live Demo
 
-- **Frontend (Netlify):** _Add your Netlify URL here_
+- **Frontend (Netlify):** https://javacodereview.netlify.app/
 - **Backend (Render):** https://code-review-tool-backend-2.onrender.com
 - **Health Check API:** `/api/health`
 
