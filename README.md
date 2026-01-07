@@ -1,7 +1,5 @@
 # Code Review Tool 🚀
 
-A web-based application that analyzes Java code and highlights possible errors, bad coding practices, and improvement suggestions.  
-This project is mainly designed for **students and beginners** to improve Java code quality.
 
 ---
 
