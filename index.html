@@ -105,17 +105,7 @@
         }
 
         .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 20px;
-            border-radius: 30px;
-            font-size: 0.9em;
-            margin-top: 15px;
-            font-weight: 600;
-            position: relative;
-            z-index: 1;
-            backdrop-filter: blur(10px);
+            display: none; /* Hidden - backend check still works in background */
         }
 
         .status-online {
@@ -490,7 +480,6 @@
         <div class="header">
             <h1>☕ Java Code Analyzer Pro</h1>
             <p>AI-Powered Static Code Analysis • Real-Time Feedback</p>
-            <div class="status-indicator" id="backendStatus">🔄 Checking backend...</div>
         </div>
 
         <div class="content">
@@ -552,13 +541,11 @@ public class Example {
     </div>
 
     <script>
-        const BACKEND_URL = 'https://code-review-tool-backend-2.onrender.com/api';
+        const BACKEND_URL = 'http://localhost:8080/api';
         let backendOnline = false;
 
         async function checkBackendStatus() {
-            const statusDiv = document.getElementById('backendStatus');
-            const analyzeBtn = document.getElementById('analyzeBtn');
-            
+            // Silently check backend status in background
             try {
                 const response = await fetch(`${BACKEND_URL}/health`, {
                     method: 'GET',
@@ -569,18 +556,13 @@ public class Example {
                 
                 if (response.ok) {
                     backendOnline = true;
-                    statusDiv.textContent = '✅ Backend Connected';
-                    statusDiv.className = 'status-indicator status-online';
-                    analyzeBtn.disabled = false;
+                    console.log('✅ Backend is online and ready');
                 } else {
                     throw new Error('Backend not responding');
                 }
             } catch (error) {
                 backendOnline = false;
-                statusDiv.textContent = '❌ Backend Disconnected';
-                statusDiv.className = 'status-indicator status-offline';
-                analyzeBtn.disabled = true;
-                console.error('Backend connection failed:', error);
+                console.log('❌ Backend is offline');
             }
         }
 
