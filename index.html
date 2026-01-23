@@ -185,7 +185,8 @@
         }
 
         .button-group {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 15px;
             margin-top: 20px;
         }
@@ -460,6 +461,123 @@
             opacity: 0.5;
         }
 
+        .metrics-dashboard {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .metric-card {
+            background: rgba(30, 41, 59, 0.6);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid rgba(120, 119, 198, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(120, 119, 198, 0.6);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .metric-label {
+            color: #94a3b8;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metric-subtext {
+            color: #64748b;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        .quality-section {
+            background: rgba(30, 41, 59, 0.6);
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid rgba(120, 119, 198, 0.3);
+            text-align: center;
+        }
+
+        .quality-score-circle {
+            width: 150px;
+            height: 150px;
+            margin: 20px auto;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            font-weight: 900;
+            position: relative;
+            background: conic-gradient(
+                from 0deg,
+                #667eea 0%,
+                #764ba2 var(--score-percent),
+                rgba(100, 116, 139, 0.3) var(--score-percent)
+            );
+        }
+
+        .quality-score-inner {
+            width: 130px;
+            height: 130px;
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-size: 1.5em;
+            font-weight: 900;
+            margin-top: 15px;
+        }
+
+        .grade-A { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; }
+        .grade-B { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
+        .grade-C { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
+        .grade-D { background: linear-gradient(135deg, #e67e22, #d35400); color: white; }
+        .grade-F { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+
+        .progress-bar-container {
+            background: rgba(100, 116, 139, 0.2);
+            height: 8px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 10px;
+            transition: width 1s ease-out;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
         @media (max-width: 1200px) {
             .content {
                 grid-template-columns: 1fr;
@@ -499,6 +617,9 @@ public class Example {
                 <div class="button-group">
                     <button class="analyze-btn" id="analyzeBtn" onclick="analyzeCode()">
                         <span style="position: relative; z-index: 1;">🔍 Analyze Code</span>
+                    </button>
+                    <button class="analyze-btn" id="metricsBtn" onclick="showMetrics()" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <span style="position: relative; z-index: 1;">📊 Show Metrics</span>
                     </button>
                     <button class="clear-btn" onclick="clearAll()">
                         <span style="position: relative; z-index: 1;">🗑️ Clear All</span>
@@ -709,6 +830,144 @@ public class Example {
                 </div>
             `;
             document.getElementById('stats').style.display = 'none';
+        }
+
+        // NEW FUNCTION: Show Metrics Dashboard
+        async function showMetrics() {
+            const code = document.getElementById('codeInput').value.trim();
+            const resultsDiv = document.getElementById('results');
+            const statsDiv = document.getElementById('stats');
+
+            if (!code) {
+                resultsDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">⚠️</div>
+                        <p style="font-size: 1.1em; font-weight: 600; color: #fbbf24;">No Code Provided</p>
+                        <p style="color: #94a3b8;">Please enter some Java code to calculate metrics</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (!backendOnline) {
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <strong style="font-size: 1.2em;">⚠️ Backend Connection Failed</strong><br><br>
+                        Please start your backend and try again.
+                    </div>
+                `;
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p style="font-size: 1.1em;">Calculating code metrics...</p></div>';
+            statsDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/metrics`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Backend error: ${response.status}`);
+                }
+
+                const metrics = await response.json();
+                displayMetrics(metrics);
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error-message">
+                        <strong style="font-size: 1.2em;">❌ Metrics Calculation Failed</strong><br><br>
+                        ${error.message}<br><br>
+                        Make sure backend is running on port 8080.
+                    </div>
+                `;
+                console.error('Metrics error:', error);
+            }
+        }
+
+        function displayMetrics(metrics) {
+            const resultsDiv = document.getElementById('results');
+            
+            const commentPercent = metrics.commentPercentage || 0;
+            const scorePercent = (metrics.qualityScore || 0);
+            
+            const html = `
+                <div class="metrics-dashboard">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h3 style="color: #e2e8f0; font-size: 1.5em; margin-bottom: 5px;">📊 Code Metrics Dashboard</h3>
+                        <p style="color: #94a3b8; font-size: 0.9em;">Comprehensive analysis of your code quality</p>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">📄 Total Lines</div>
+                            <div class="metric-value">${metrics.totalLines || 0}</div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 100%;"></div>
+                            </div>
+                            <div class="metric-subtext">Code: ${metrics.codeLines || 0} | Comments: ${metrics.commentLines || 0} | Blank: ${metrics.blankLines || 0}</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-label">🏗️ Structure</div>
+                            <div class="metric-value">${metrics.classCount || 0}</div>
+                            <div class="metric-subtext">Classes Found</div>
+                            <div class="progress-bar-container" style="margin-top: 10px;">
+                                <div class="progress-bar" style="width: ${Math.min(metrics.classCount * 20, 100)}%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-label">⚙️ Methods</div>
+                            <div class="metric-value">${metrics.methodCount || 0}</div>
+                            <div class="metric-subtext">Public: ${metrics.publicMethodCount || 0} | Private: ${metrics.privateMethodCount || 0}</div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: ${Math.min(metrics.methodCount * 5, 100)}%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-label">💬 Documentation</div>
+                            <div class="metric-value">${commentPercent.toFixed(1)}%</div>
+                            <div class="metric-subtext">${metrics.commentLines || 0} comment lines</div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: ${Math.min(commentPercent * 3, 100)}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quality-section">
+                        <h4 style="color: #e2e8f0; font-size: 1.3em; margin-bottom: 15px;">🎯 Code Quality Score</h4>
+                        <div class="quality-score-circle" style="--score-percent: ${scorePercent}%;">
+                            <div class="quality-score-inner">
+                                <div style="font-size: 0.9em; color: #94a3b8;">Score</div>
+                                <div style="color: #667eea;">${scorePercent}</div>
+                                <div style="font-size: 0.4em; color: #94a3b8;">/100</div>
+                            </div>
+                        </div>
+                        <div class="grade-badge grade-${metrics.qualityGrade || 'F'}">
+                            Grade: ${metrics.qualityGrade || 'N/A'}
+                        </div>
+                        <p style="color: #94a3b8; margin-top: 15px; font-size: 0.95em;">
+                            ${getScoreMessage(scorePercent)}
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            resultsDiv.innerHTML = html;
+        }
+
+        function getScoreMessage(score) {
+            if (score >= 90) return "🌟 Excellent! Your code follows best practices.";
+            if (score >= 80) return "✨ Great job! Minor improvements possible.";
+            if (score >= 70) return "👍 Good code. Consider adding more comments.";
+            if (score >= 60) return "⚠️ Decent code. Room for improvement.";
+            return "🔧 Needs work. Focus on code quality and documentation.";
         }
     </script>
 </body>
