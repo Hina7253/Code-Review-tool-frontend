@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Java Code Analyzer Pro</title>
+    <!-- jsPDF Library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -578,6 +580,49 @@
             box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
         }
 
+        .download-pdf-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 28px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: none;
+        }
+
+        .download-pdf-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(245, 87, 108, 0.6);
+        }
+
+        .download-pdf-btn:active {
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .download-pdf-btn.show {
+            display: block;
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         @media (max-width: 1200px) {
             .content {
                 grid-template-columns: 1fr;
@@ -661,9 +706,22 @@ public class Example {
         </div>
     </div>
 
+    <!-- Floating Download PDF Button -->
+    <button class="download-pdf-btn" id="downloadPdfBtn" onclick="downloadPDF()">
+        📥 Download PDF Report
+    </button>
+
     <script>
-        const BACKEND_URL = 'https://code-review-tool-backend-2.onrender.com/api';
+        // CHANGE THIS: Replace with your Render backend URL
+        const BACKEND_URL = 'https://your-backend-app.onrender.com/api'; // ← UPDATE THIS!
+        // For local testing use: 'http://localhost:8080/api'
+        
         let backendOnline = false;
+        
+        // Store current analysis data for PDF generation
+        let currentAnalysisData = null;
+        let currentMetricsData = null;
+        let analysisType = null; // 'issues' or 'metrics'
 
         async function checkBackendStatus() {
             // Silently check backend status in background
@@ -740,8 +798,11 @@ public class Example {
                     throw new Error(data.error);
                 }
 
+                currentAnalysisData = data;
+                analysisType = 'issues';
                 displayResults(data);
                 statsDiv.style.display = 'grid';
+                showDownloadButton();
             } catch (error) {
                 resultsDiv.innerHTML = `
                     <div class="error-message">
@@ -876,7 +937,11 @@ public class Example {
                 }
 
                 const metrics = await response.json();
+                
+                currentMetricsData = metrics;
+                analysisType = 'metrics';
                 displayMetrics(metrics);
+                showDownloadButton();
             } catch (error) {
                 resultsDiv.innerHTML = `
                     <div class="error-message">
@@ -968,6 +1033,217 @@ public class Example {
             if (score >= 70) return "👍 Good code. Consider adding more comments.";
             if (score >= 60) return "⚠️ Decent code. Room for improvement.";
             return "🔧 Needs work. Focus on code quality and documentation.";
+        }
+
+        function showDownloadButton() {
+            const btn = document.getElementById('downloadPdfBtn');
+            btn.classList.add('show');
+        }
+
+        function hideDownloadButton() {
+            const btn = document.getElementById('downloadPdfBtn');
+            btn.classList.remove('show');
+        }
+
+        // PDF Generation Function
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            let yPos = 20;
+
+            // Header with gradient effect (simulated)
+            doc.setFillColor(102, 126, 234);
+            doc.rect(0, 0, pageWidth, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(24);
+            doc.setFont(undefined, 'bold');
+            doc.text('☕ Java Code Review Report', pageWidth / 2, 20, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            const currentDate = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            doc.text(`Generated: ${currentDate}`, pageWidth / 2, 30, { align: 'center' });
+
+            yPos = 50;
+            doc.setTextColor(0, 0, 0);
+
+            if (analysisType === 'metrics' && currentMetricsData) {
+                // Metrics Report
+                doc.setFontSize(16);
+                doc.setFont(undefined, 'bold');
+                doc.text('📊 Code Metrics Summary', 20, yPos);
+                yPos += 10;
+
+                // Draw metrics box
+                doc.setDrawColor(102, 126, 234);
+                doc.setLineWidth(0.5);
+                doc.rect(15, yPos, pageWidth - 30, 80);
+                yPos += 10;
+
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'normal');
+                
+                const metrics = currentMetricsData;
+                doc.text(`Total Lines: ${metrics.totalLines || 0}`, 25, yPos);
+                doc.text(`Classes: ${metrics.classCount || 0}`, pageWidth / 2 + 10, yPos);
+                yPos += 8;
+                
+                doc.text(`Code Lines: ${metrics.codeLines || 0}`, 25, yPos);
+                doc.text(`Methods: ${metrics.methodCount || 0}`, pageWidth / 2 + 10, yPos);
+                yPos += 8;
+                
+                doc.text(`Comment Lines: ${metrics.commentLines || 0}`, 25, yPos);
+                doc.text(`Public Methods: ${metrics.publicMethodCount || 0}`, pageWidth / 2 + 10, yPos);
+                yPos += 8;
+                
+                doc.text(`Blank Lines: ${metrics.blankLines || 0}`, 25, yPos);
+                doc.text(`Private Methods: ${metrics.privateMethodCount || 0}`, pageWidth / 2 + 10, yPos);
+                yPos += 8;
+                
+                doc.text(`Comment Percentage: ${(metrics.commentPercentage || 0).toFixed(1)}%`, 25, yPos);
+                yPos += 15;
+
+                // Quality Score Section
+                doc.setFontSize(16);
+                doc.setFont(undefined, 'bold');
+                doc.text('🎯 Quality Assessment', 20, yPos);
+                yPos += 10;
+
+                doc.setFillColor(240, 240, 240);
+                doc.rect(15, yPos, pageWidth - 30, 35, 'F');
+                yPos += 10;
+
+                doc.setFontSize(14);
+                doc.setTextColor(102, 126, 234);
+                doc.text(`Quality Score: ${metrics.qualityScore || 0}/100`, pageWidth / 2, yPos, { align: 'center' });
+                yPos += 10;
+
+                doc.setFontSize(18);
+                const gradeColors = {
+                    'A': [46, 204, 113],
+                    'B': [52, 152, 219],
+                    'C': [243, 156, 18],
+                    'D': [230, 126, 34],
+                    'F': [231, 76, 60]
+                };
+                const grade = metrics.qualityGrade || 'F';
+                doc.setTextColor(...(gradeColors[grade] || [0, 0, 0]));
+                doc.text(`Grade: ${grade}`, pageWidth / 2, yPos, { align: 'center' });
+                yPos += 10;
+
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.text(getScoreMessage(metrics.qualityScore || 0), pageWidth / 2, yPos, { align: 'center' });
+                yPos += 20;
+
+            } else if (analysisType === 'issues' && currentAnalysisData) {
+                // Issues Report
+                doc.setFontSize(16);
+                doc.setFont(undefined, 'bold');
+                doc.text('🔍 Code Analysis Results', 20, yPos);
+                yPos += 10;
+
+                // Summary box
+                doc.setFillColor(240, 240, 240);
+                doc.rect(15, yPos, pageWidth - 30, 25, 'F');
+                yPos += 8;
+
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'normal');
+                const criticalCount = currentAnalysisData.critical?.length || 0;
+                const warningCount = currentAnalysisData.warning?.length || 0;
+                const infoCount = currentAnalysisData.info?.length || 0;
+                const totalIssues = criticalCount + warningCount + infoCount;
+
+                doc.text(`Total Issues Found: ${totalIssues}`, 25, yPos);
+                yPos += 7;
+                doc.setTextColor(220, 38, 38);
+                doc.text(`🔴 Critical: ${criticalCount}`, 25, yPos);
+                doc.setTextColor(245, 158, 11);
+                doc.text(`⚠️  Warnings: ${warningCount}`, pageWidth / 3 + 10, yPos);
+                doc.setTextColor(59, 130, 246);
+                doc.text(`ℹ️  Info: ${infoCount}`, 2 * pageWidth / 3 + 10, yPos);
+                yPos += 15;
+
+                doc.setTextColor(0, 0, 0);
+
+                // Critical Issues
+                if (criticalCount > 0) {
+                    doc.setFontSize(14);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(220, 38, 38);
+                    doc.text('🔴 Critical Issues', 20, yPos);
+                    yPos += 8;
+
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0, 0, 0);
+
+                    currentAnalysisData.critical.slice(0, 5).forEach((issue, index) => {
+                        if (yPos > pageHeight - 30) {
+                            doc.addPage();
+                            yPos = 20;
+                        }
+                        doc.text(`${index + 1}. Line ${issue.lineNumber || 'N/A'}:`, 25, yPos);
+                        yPos += 5;
+                        const lines = doc.splitTextToSize(issue.description, pageWidth - 50);
+                        doc.text(lines, 30, yPos);
+                        yPos += lines.length * 5 + 3;
+                    });
+                    yPos += 5;
+                }
+
+                // Warnings
+                if (warningCount > 0) {
+                    if (yPos > pageHeight - 40) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    doc.setFontSize(14);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(245, 158, 11);
+                    doc.text('⚠️  Warnings', 20, yPos);
+                    yPos += 8;
+
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(0, 0, 0);
+
+                    currentAnalysisData.warning.slice(0, 5).forEach((issue, index) => {
+                        if (yPos > pageHeight - 30) {
+                            doc.addPage();
+                            yPos = 20;
+                        }
+                        doc.text(`${index + 1}. Line ${issue.lineNumber || 'N/A'}:`, 25, yPos);
+                        yPos += 5;
+                        const lines = doc.splitTextToSize(issue.description, pageWidth - 50);
+                        doc.text(lines, 30, yPos);
+                        yPos += lines.length * 5 + 3;
+                    });
+                }
+            }
+
+            // Footer
+            const totalPages = doc.internal.pages.length - 1;
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+                doc.text('Generated by Java Code Analyzer Pro', pageWidth / 2, pageHeight - 5, { align: 'center' });
+            }
+
+            // Save PDF
+            const fileName = `code-review-${new Date().getTime()}.pdf`;
+            doc.save(fileName);
         }
     </script>
 </body>
