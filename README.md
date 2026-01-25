@@ -9,7 +9,7 @@ This project is mainly designed for **students and beginners** to improve Java c
 
 - **Frontend (Netlify):** https://javacodereview.netlify.app/
 - **Backend (Render):** https://code-review-tool-backend-2.onrender.com
-- **Health Check API:** `/api/health`
+- **Health Check API:** `/api/health
 - **Code Analyze API:**  /api/analyze
 - **Show Metrics API:**  /api/metrics
 
@@ -21,7 +21,7 @@ This project is mainly designed for **students and beginners** to improve Java c
 - HTML
 - CSS
 - JavaScript
-- Netlify
+- Netlify(Deployment 
 
 ### Backend
 - Java
