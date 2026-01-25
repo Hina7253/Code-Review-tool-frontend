@@ -21,7 +21,6 @@ This project is mainly designed for **students and beginners** to improve Java c
 - HTML
 - CSS
 - JavaScript
-- Netlify (Deployment)
 
 ### Backend
 - Java
