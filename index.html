@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Code Analyzer Pro</title>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- jsPDF Library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>☕ Java Code Analyzer Pro</h1>
+            <p>AI-Powered Static Code Analysis • Real-Time Feedback</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Code Input Section -->
+            <div class="section">
+                <div class="section-title">
+                    <span>📝</span>
+                    <span>Source Code Editor</span>
+                </div>
+                <textarea id="codeInput" placeholder="// Paste your Java code here...
+
+public class Example {
+    public void riskyMethod() {
+        String value = null;
+        System.out.println(value.length());
+    }
+}"></textarea>
+                <div class="button-group">
+                    <button class="analyze-btn" id="analyzeBtn" onclick="analyzeCode()">
+                        <span style="position: relative; z-index: 1;">🔍 Analyze Code</span>
+                    </button>
+                    <button class="analyze-btn" id="metricsBtn" onclick="showMetrics()" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <span style="position: relative; z-index: 1;">📊 Show Metrics</span>
+                    </button>
+                    <button class="clear-btn" onclick="clearAll()">
+                        <span style="position: relative; z-index: 1;">🗑️ Clear All</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="section">
+                <div class="section-title">
+                    <span>📊</span>
+                    <span>Analysis Results</span>
+                </div>
+                <div class="results-container" id="results">
+                    <div class="empty-state">
+                        <div class="icon">🔍</div>
+                        <p style="font-size: 1.1em; font-weight: 600; margin-bottom: 10px;">Ready to Analyze</p>
+                        <p>Enter your Java code and click "Analyze Code" to start comprehensive code review</p>
+                    </div>
+                </div>
+                <div class="stats" id="stats" style="display: none;">
+                    <div class="stat-box">
+                        <div class="stat-number" id="criticalCount">0</div>
+                        <div class="stat-label">Critical</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="warningCount">0</div>
+                        <div class="stat-label">Warnings</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="infoCount">0</div>
+                        <div class="stat-label">Suggestions</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalCount">0</div>
+                        <div class="stat-label">Total Issues</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Download PDF Button -->
+    <button class="download-pdf-btn" id="downloadPdfBtn" onclick="downloadPDF()">
+        📥 Download PDF Report
+    </button>
+
+    <!-- External JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
