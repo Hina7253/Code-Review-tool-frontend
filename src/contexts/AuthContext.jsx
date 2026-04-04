@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -16,25 +15,24 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(localStorage.getItem('token'));
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUser();
     } else {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   const fetchUser = async () => {
     try {
       const response = await api.get('/auth/me');
-      setUser(response.data.user);
+      setUser(response.data);
     } catch (error) {
-      console.error('Failed to fetch user:', error);
+      console.error('Fetch user error:', error);
       localStorage.removeItem('token');
-      setToken(null);
       delete api.defaults.headers.common['Authorization'];
     } finally {
       setLoading(false);
@@ -43,45 +41,52 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('Attempting login with:', email);
       const response = await api.post('/auth/login', { email, password });
-      const { token: newToken, user: userData } = response.data;
+      console.log('Login response:', response.data);
       
-      localStorage.setItem('token', newToken);
-      setToken(newToken);
-      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      const { token, user: userData } = response.data;
+      
+      localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(userData);
       
       toast.success('Login successful!');
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      console.error('Login error:', error.response?.data || error.message);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Login failed';
+      toast.error(errorMsg);
       return false;
     }
   };
 
   const register = async (username, email, password) => {
     try {
+      console.log('Attempting registration with:', { username, email });
       const response = await api.post('/auth/register', { username, email, password });
-      const { token: newToken, user: userData } = response.data;
+      console.log('Registration response:', response.data);
       
-      localStorage.setItem('token', newToken);
-      setToken(newToken);
-      api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      const { token, user: userData } = response.data;
+      
+      localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(userData);
       
       toast.success('Registration successful!');
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      console.error('Registration error:', error.response?.data || error.message);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Registration failed';
+      toast.error(errorMsg);
       return false;
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
     delete api.defaults.headers.common['Authorization'];
+    setUser(null);
     toast.success('Logged out successfully');
   };
 

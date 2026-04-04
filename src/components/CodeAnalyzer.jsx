@@ -27,34 +27,50 @@ public class Example {
   });
 
   const analyzeCode = async () => {
-    if (!code.trim()) {
-      toast.error('Please enter some Java code to analyze');
-      return;
-    }
+  // Check if user is logged in
+  const token = localStorage.getItem('token');
+  if (!token) {
+    toast.error('Please login first');
+    window.location.href = '/login';
+    return;
+  }
 
-    setLoading(true);
-    setActiveView('issues');
+  if (!code.trim()) {
+    toast.error('Please enter some Java code to analyze');
+    return;
+  }
 
-    try {
-      const response = await api.post('/analyze', { code });
-      const data = response.data;
-      
-      setAnalysisData(data);
-      setStats({
-        critical: data.critical?.length || 0,
-        warning: data.warning?.length || 0,
-        info: data.info?.length || 0,
-        total: data.totalIssues || 0
-      });
-      
-      toast.success('Analysis completed successfully!');
-    } catch (error) {
-      console.error('Analysis error:', error);
+  setLoading(true);
+  setActiveView('issues');
+
+  try {
+    console.log('Sending analysis request...');
+    const response = await api.post('/analyze', { code });
+    console.log('Analysis response:', response.data);
+    
+    const data = response.data;
+    
+    setAnalysisData(data);
+    setStats({
+      critical: data.critical?.length || 0,
+      warning: data.warning?.length || 0,
+      info: data.info?.length || 0,
+      total: data.totalIssues || 0
+    });
+    
+    toast.success('Analysis completed successfully!');
+  } catch (error) {
+    console.error('Analysis error:', error);
+    if (error.response?.status === 401) {
+      toast.error('Session expired. Please login again.');
+      window.location.href = '/login';
+    } else {
       toast.error(error.response?.data?.message || 'Analysis failed');
-    } finally {
-      setLoading(false);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   const showMetrics = async () => {
     if (!code.trim()) {
