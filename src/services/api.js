@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://code-review-tool-backend-1.onrender.com';
 
 const api = axios.create({
   baseURL: API_URL,
